@@ -150,7 +150,7 @@ Every `CLAUDE.md` template ships with an `## AI Workflow` section encoding five 
 
 ### Hookify Rules
 
-Four safety rules are included. To customize:
+Five safety rules are included. To customize:
 - Edit rules in `hookify-rules/` before installing
 - Or edit in `~/.claude/kit/hookify-rules/` after
 - Set `enabled: false` in frontmatter to disable a rule
