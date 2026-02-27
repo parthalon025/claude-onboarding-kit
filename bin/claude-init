@@ -26,6 +26,16 @@ _CONFIG="$HOME/.claude/kit/config.env"
 GITHUB_ORG="${GITHUB_ORG:-}"
 DEFAULT_VISIBILITY="${DEFAULT_VISIBILITY:-private}"
 TEMPLATE_TYPE="${1:-}"
+PROJECT_MODE="internal"  # default
+
+# Parse additional flags
+for arg in "$@"; do
+    case "$arg" in
+        --product) PROJECT_MODE="product" ;;
+        --lib)     PROJECT_MODE="lib" ;;
+    esac
+done
+
 # Compute package name early (used in template substitution)
 PKG_NAME="$(echo "$PROJECT_NAME" | tr '-' '_')"
 
@@ -346,6 +356,18 @@ if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
     fi
 else
     echo "[=] CLAUDE.md already exists, skipping"
+fi
+
+# Copy mode-appropriate pipeline-status
+STATUS_TEMPLATE="$KIT_DIR/templates/pipeline-status-${PROJECT_MODE}.md"
+[[ -f "$STATUS_TEMPLATE" ]] || STATUS_TEMPLATE="$KIT_DIR/templates/pipeline-status-internal.md"
+if [[ -f "$STATUS_TEMPLATE" ]]; then
+    mkdir -p "$PROJECT_DIR/tasks"
+    KIT_VERSION_VAL="$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown)"
+    sed -e "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" \
+        -e "s/{{KIT_VERSION}}/$KIT_VERSION_VAL/g" \
+        "$STATUS_TEMPLATE" > "$PROJECT_DIR/tasks/pipeline-status.md"
+    echo "[+] Pipeline status → tasks/pipeline-status.md (mode: $PROJECT_MODE)"
 fi
 
 # Copy hookify rules

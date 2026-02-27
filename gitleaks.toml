@@ -1,0 +1,24 @@
+# gitleaks.toml — allowlist for test/example credentials
+# Prevents false positives from fixture data in tests
+
+title = "{{PROJECT_NAME}} gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules.allowlists]]
+description = "Test fixture credentials"
+regexes = [
+  "test[-_]token",
+  "fake[-_](key|token|secret|api)",
+  "example[-_](key|token)",
+  "sk-fake",
+  "REPLACE_ME",
+  "your[-_](api[-_])?(key|token)",
+]
+paths = [
+  "tests/",
+  "examples/",
+  ".env.example",
+  "config.env.example",
+]
