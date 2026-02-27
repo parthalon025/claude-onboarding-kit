@@ -88,7 +88,11 @@ pip_install() {
     done
     if [[ ${#to_install[@]} -gt 0 ]]; then
         echo "  Installing: ${to_install[*]}"
-        pip install "${to_install[@]}"
+        if command -v pipx &>/dev/null; then
+            for d in "${to_install[@]}"; do pipx install "$d"; done
+        else
+            pip install "${to_install[@]}"
+        fi
     fi
 }
 
@@ -99,7 +103,7 @@ copy_config() {
     local dst="${PROJECT_ROOT:-.}/$2"
     if [[ -f "$dst" ]]; then
         echo "  [exists] $2"
-        return 1
+        return 0
     fi
     if [[ ! -f "$src" ]]; then
         echo "  [warn] Template not found: $1"
