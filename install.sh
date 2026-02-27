@@ -6,7 +6,6 @@ set -euo pipefail
 
 KIT_SOURCE="$(cd "$(dirname "$0")" && pwd)"
 KIT_DEST="$HOME/.claude/kit"
-SKILL_DEST="$HOME/.claude/skills/setup-repo"
 BIN_DEST="$HOME/.local/bin"
 
 echo "=== Installing claude-onboarding-kit ==="
@@ -50,10 +49,18 @@ else
     echo "[=] Config already exists, skipping (check config.env.example for new options)"
 fi
 
-# --- Skill ---
-mkdir -p "$SKILL_DEST"
-cp "$KIT_SOURCE/skills/setup-repo/SKILL.md" "$SKILL_DEST/"
-echo "[+] Skill → $SKILL_DEST/SKILL.md"
+# --- All skills ---
+for skill_dir in "$KIT_SOURCE/skills/"/*/; do
+    skill_name="$(basename "$skill_dir")"
+    mkdir -p "$HOME/.claude/skills/$skill_name"
+    cp "$skill_dir/SKILL.md" "$HOME/.claude/skills/$skill_name/"
+    echo "[+] Skill → ~/.claude/skills/$skill_name/"
+done
+
+# --- Version ---
+KIT_VERSION="$(cat "$KIT_SOURCE/VERSION")"
+cp "$KIT_SOURCE/VERSION" "$KIT_DEST/VERSION"
+echo "[+] Kit version $KIT_VERSION installed"
 
 # --- Scripts ---
 mkdir -p "$BIN_DEST"
@@ -67,10 +74,11 @@ echo "[+] claude-init → $BIN_DEST/claude-init (symlink)"
 for script in "$KIT_SOURCE/scripts/"*.sh; do
     name="$(basename "$script" .sh)"
     [[ "$name" == "claude-init" ]] && continue  # handled above
+    [[ "$name" == "lesson-check" ]] && continue  # archived — use: lessons-db scan --staged-only
     cp "$script" "$BIN_DEST/$name"
     chmod +x "$BIN_DEST/$name"
 done
-echo "[+] Scripts → $BIN_DEST/{ollama-code-review,generate-embeddings,lesson-check,lint-install}"
+echo "[+] Scripts → $BIN_DEST/{ollama-code-review,generate-embeddings,lint-install}"
 
 # --- Verify PATH ---
 if ! echo "$PATH" | grep -q "$BIN_DEST"; then

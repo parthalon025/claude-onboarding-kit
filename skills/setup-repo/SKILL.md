@@ -48,6 +48,13 @@ Ask the user for missing information. Auto-detect what you can from the filesyst
 2. **Project type** — auto-detect: `package.json` → node, `pyproject.toml` → python. Ask if ambiguous.
 3. **Description** — one-line summary (used for GitHub repo description and README)
 4. **Visibility** — private (default from config) or public
+5. **Project mode** — what kind of project is this?
+   - `internal` — Internal tool, personal automation, scripts (default)
+   - `product` — User-facing product with external users
+   - `lib` — Open source library or framework meant for others to consume
+
+   This determines which lifecycle artifacts are created, which directories are
+   scaffolded, and which workflow pipeline is documented in CLAUDE.md.
 
 **Optional inputs (ask as a group):**
 
@@ -64,7 +71,7 @@ Ask the user for missing information. Auto-detect what you can from the filesyst
 
 If `$ARGUMENTS` provides values, parse them and skip redundant questions.
 
-**Before proceeding:** Present a summary table of all gathered values and ask for confirmation.
+**Before proceeding:** Present a summary table of all gathered values (including `PROJECT_MODE`) and ask for confirmation.
 
 ---
 
@@ -316,7 +323,7 @@ Append these sections to the existing CLAUDE.md (do not overwrite — add after 
 ## Quality Gates
 
 - Before committing: `/verify` (self-verification checklist)
-- Before PRs: `lesson-check --project-root .` (anti-pattern scanner)
+- Before PRs: `lessons-db scan --staged-only` (anti-pattern scanner)
 
 ## Lessons
 
@@ -329,24 +336,50 @@ Append these sections to the existing CLAUDE.md (do not overwrite — add after 
 
 ```bash
 mkdir -p docs/lessons docs/plans tasks
-touch progress.txt  # append-only state file
+touch tasks/progress.txt  # append-only state file
 ```
 
-### Wire lesson-check as git pre-commit hook:
+### Wire lessons-db as git pre-commit hook:
 
 ```bash
 cat > .git/hooks/pre-commit << 'HOOK'
 #!/bin/bash
-# Lesson anti-pattern scanner — checks staged files against known bad patterns
-LESSON_CHECK="$(command -v lesson-check 2>/dev/null || echo "$HOME/.local/bin/lesson-check")"
-if [ -x "$LESSON_CHECK" ]; then
-    $LESSON_CHECK --project-root . --staged-only || exit 1
+# Anti-pattern scanner — checks staged files against known bad patterns
+LESSONS_DB="$(command -v lessons-db 2>/dev/null)"
+if [ -x "$LESSONS_DB" ]; then
+    $LESSONS_DB scan --staged-only || exit 1
 fi
 HOOK
 chmod +x .git/hooks/pre-commit
 ```
 
 Note: This supplements (doesn't replace) the gitleaks pre-commit hook from Phase 4. If using `pre-commit` framework, both hooks coexist.
+
+### Surface relevant lessons at setup time:
+
+Run a targeted search based on project type and surface top matches into the CLAUDE.md `## Lessons` section:
+
+```bash
+if command -v lessons-db &>/dev/null; then
+    case "$PROJECT_TYPE" in
+        python) QUERY="python async error handling sqlite context manager" ;;
+        node)   QUERY="typescript node async promise error handling" ;;
+        *)      QUERY="error handling logging fallback silent failure" ;;
+    esac
+    echo "" >> CLAUDE.md
+    echo "## Top Lessons for This Project" >> CLAUDE.md
+    echo "" >> CLAUDE.md
+    lessons-db search "$QUERY" --top 5 --format brief >> CLAUDE.md 2>/dev/null || true
+fi
+```
+
+### Run scope inference:
+
+```bash
+if command -v scope-infer &>/dev/null; then
+    scope-infer --project-root . --update-claude-md
+fi
+```
 
 ---
 
@@ -413,7 +446,94 @@ Ensure `.embeddings/` is listed in `.gitignore`.
 
 ---
 
-## Phase 10: Verification + Summary
+## Phase 10: Mode-Based Directory Structure
+
+Create directories based on `$PROJECT_MODE`:
+
+```bash
+# All modes
+mkdir -p docs/plans docs/decisions tasks
+touch tasks/progress.txt
+
+# Internal tool and above
+mkdir -p docs/product
+
+# Product and OSS Library
+if [[ "$PROJECT_MODE" != "internal" ]]; then
+    mkdir -p docs/research docs/design
+fi
+```
+
+Create `tasks/pipeline-status.md` from the installed kit template:
+
+```bash
+KIT_DIR="${CLAUDE_KIT_DIR:-$HOME/.claude/kit}"
+STATUS_TEMPLATE="$KIT_DIR/templates/pipeline-status-${PROJECT_MODE}.md"
+[[ -f "$STATUS_TEMPLATE" ]] || STATUS_TEMPLATE="$KIT_DIR/templates/pipeline-status-internal.md"
+sed "s/{{PROJECT_NAME}}/$PROJECT_NAME/g; s/{{KIT_VERSION}}/$(cat "$KIT_DIR/VERSION" 2>/dev/null || echo unknown)/g" \
+    "$STATUS_TEMPLATE" > tasks/pipeline-status.md
+```
+
+---
+
+## Phase 11: Draft Lifecycle Artifacts
+
+Using the project description from Phase 1, generate draft content for
+core artifacts — user edits rather than starting from scratch.
+
+**All modes:** Draft skeleton PRD using `/create-prd` with the description.
+
+**Product + OSS:** Also draft:
+- MRD skeleton (`/create-mrd`) — market context, target users, KPIs
+- Risk log (`/create-risk-log`) — 3-5 likely risks given project type
+- Roadmap skeleton (`/create-roadmap`) — 3 milestone rows
+
+**Do not ask the user to fill these in now** — scaffold and move on.
+Remind them in Phase 14 next steps.
+
+---
+
+## Phase 12: Supporting Files
+
+Copy template files from the kit:
+
+```bash
+KIT_DIR="${CLAUDE_KIT_DIR:-$HOME/.claude/kit}"
+
+# AGENTS.md — multi-agent workflow documentation
+cp "$KIT_DIR/templates/AGENTS.md" AGENTS.md
+sed -i "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" AGENTS.md
+
+# gitleaks allowlist for test credentials
+cp "$KIT_DIR/gitleaks.toml" gitleaks.toml
+sed -i "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" gitleaks.toml
+```
+
+Verify `.gitignore` includes:
+- `.env`, `.env.*`, `!.env.example`
+- `.claude/*.local.md`
+- `client_secret*.json`
+- `.embeddings/`
+
+---
+
+## Phase 13: Security Review (Pre-Publish Gate)
+
+**Only run if user requests `--publish` or explicitly asks to go public.**
+
+```bash
+# Run security-reviewer agent across the repo
+# This must pass before: gh repo edit --visibility public
+```
+
+Ask Claude Code to invoke the `security-reviewer` agent:
+- Scans for hardcoded values, private hostnames, personal identifiers, API key patterns
+- Output saved to `docs/security-review-$(date +%Y-%m-%d).md`
+- Must show zero findings before flipping visibility
+
+---
+
+## Phase 14: Verification + Summary
 
 Run all checks and present results as a table:
 
@@ -434,14 +554,19 @@ Run all checks and present results as a table:
 [ok/!!] Quality gates + lessons documented in CLAUDE.md
 [ok/!!] Ollama code review referenced in CLAUDE.md
 [ok/!!] Embedding generation script installed
+[ok/!!] Pipeline status file created (tasks/pipeline-status.md)
+[ok/!!] AGENTS.md created
+[ok/!!] gitleaks.toml created
+[ok/!!] Mode-based directories created ($PROJECT_MODE)
 ```
 
 ### Next steps (tell the user):
 
-1. Fill in `{{placeholders}}` in CLAUDE.md
+1. Fill in `{{placeholders}}` in CLAUDE.md and `AGENTS.md`
 2. Merge session-start hook to default branch for web sessions
 3. Run `bash scripts/generate-embeddings.sh` to build initial search index
-4. Run `claude` and start building
+4. Check `tasks/pipeline-status.md` — draft artifacts are ready to fill in
+5. Run `claude` and start building
 
 ### Commit:
 

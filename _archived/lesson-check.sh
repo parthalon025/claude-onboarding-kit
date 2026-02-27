@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# DEPRECATED — archived 2026-02-27
+# lessons-db is the canonical anti-pattern scanner.
+# Install: pip install lessons-db
+# Usage: lessons-db scan --staged-only
+# This file is kept for reference only. Do not use.
+#
+# Original content below:
+#!/usr/bin/env bash
 # Lesson anti-pattern scanner — checks staged/changed files against known bad patterns
 # Usage: lesson-check [--project-root DIR] [--staged-only]
 #

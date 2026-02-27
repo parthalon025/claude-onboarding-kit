@@ -26,39 +26,65 @@ claude-init
 
 | Phase | What | Details |
 |-------|------|---------|
-| 1 | **Gather info** | Project name, type, description, visibility, feature toggles |
+| 1 | **Gather info** | Project name, type, description, visibility, **project mode** (internal/product/lib), feature toggles |
 | 2 | **Scaffold** | Git init, GitHub repo, CLAUDE.md from template (with AI workflow discipline), hookify safety rules, PR template |
 | 3 | **GitHub settings** | Description, topics, homepage, optional branch protection |
 | 4 | **Gitleaks** | Pre-commit hook + `.pre-commit-config.yaml`, `.gitignore` hardening |
 | 4.5 | **Code quality** | Auto-detect linters/formatters, generate Makefile + CI (26 plugins) |
 | 5 | **Session hook** | Claude Code web session-start hook (auto-install deps) |
 | 6 | **CI workflows** | `security.yml` (gitleaks scan), `release.yml` (tag-based releases) |
-| 7 | **Quality gates** | Lesson-check pre-commit hook, `docs/lessons/` directory |
+| 7 | **Quality gates** | `lessons-db scan` pre-commit hook, scope inference, top-5 lessons surfaced into CLAUDE.md |
 | 8 | **AI code review** | Ollama-powered code review via local LLM |
 | 9 | **Embeddings** | Semantic code search via nomic-embed-text |
-| 10 | **Verification** | Status table of all checks, next steps |
+| 10 | **Mode-based dirs** | `docs/plans/`, `tasks/`, `pipeline-status.md` scaffolded per project mode |
+| 11 | **Draft artifacts** | PRD skeleton (all modes), MRD + risk log + roadmap (product/lib modes) |
+| 12 | **Supporting files** | `AGENTS.md` + `gitleaks.toml` from kit templates |
+| 13 | **Security gate** | Optional: security-reviewer agent scan before making repo public |
+| 14 | **Verification** | Status table of all checks, next steps |
+
+### Project Modes
+
+`/setup-repo` asks which **project mode** applies — this shapes the lifecycle artifacts scaffolded:
+
+| Mode | When | Extra artifacts |
+|------|------|----------------|
+| `internal` | Personal tools, automation, scripts | PRD, risk log, tech spec |
+| `product` | User-facing product with external users | + MRD, personas, roadmap, release plan |
+| `lib` | Open source library for others to consume | + Public-facing ROADMAP.md, contributor docs |
+
+`claude-init --product` and `claude-init --lib` set the mode without the interactive pipeline.
 
 ## What Gets Installed
 
 ```
 ~/.claude/
   kit/
+    VERSION                 # Kit version (1.0.0)
     config.env              # Your configuration
     templates/              # CLAUDE.md templates (node, python, general) + PR template
+                            # AGENTS.md, pipeline-status-internal.md, pipeline-status-product.md
     hookify-rules/          # Safety rules (5 rules)
     workflows/              # CI workflow templates (security, release)
-    hooks/                  # Session hook templates (node, python)
+    hooks/                  # Session hook templates + goal-reflection + improvement-loop
     plugins/                # Code quality plugins (26 plugins)
     linter-configs/         # Config templates for linters/formatters
+    gitleaks.toml           # Allowlist for test fixture credentials
   skills/
-    setup-repo/SKILL.md     # The /setup-repo skill
+    setup-repo/SKILL.md     # The /setup-repo skill (14-phase pipeline)
+    create-tech-spec/       # /create-tech-spec — architecture decision contract
+    create-risk-log/        # /create-risk-log — risks scored by likelihood × impact
+    create-qa-plan/         # /create-qa-plan — acceptance criteria test matrix
+    create-adr/             # /create-adr — architecture decision records
+    create-retrospective/   # /create-retrospective — project close-out + lesson capture
+    create-mrd/             # /create-mrd — market requirements (product/lib modes)
+    create-roadmap/         # /create-roadmap — milestone planning
+    create-release-plan/    # /create-release-plan — launch checklist + rollback plan
 
 ~/.local/bin/
-  claude-init               # Project initializer
+  claude-init               # Project initializer (--product, --lib mode flags)
   lint-install              # Auto-detect & install code quality tools
   ollama-code-review        # AI code review (any language)
   generate-embeddings       # Semantic code embeddings
-  lesson-check              # Anti-pattern scanner
 ```
 
 ## Configuration
@@ -96,7 +122,7 @@ Each script works independently, outside of `/setup-repo`:
 
 ```bash
 # Initialize a project with CLAUDE.md and safety rules
-claude-init [node|python|general]
+claude-init [node|python|general] [--product|--lib]
 
 # Auto-detect & install code quality tools (linters, formatters, CI)
 lint-install [--dry-run] [--only core|recommended|all] [--skip PLUGIN] [--project-root DIR]
@@ -107,8 +133,8 @@ ollama-code-review [--lang python] [--model deepseek-coder:6.7b] ./my-project
 # Generate semantic embeddings for code search
 generate-embeddings [--model nomic-embed-text] [--src-dir src/]
 
-# Check for anti-patterns in changed files
-lesson-check [--project-root .] [--staged-only]
+# Check for anti-patterns in staged files (replaces lesson-check)
+lessons-db scan --staged-only
 ```
 
 ## Code Quality Plugins
