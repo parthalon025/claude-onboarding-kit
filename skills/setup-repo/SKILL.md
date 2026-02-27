@@ -537,7 +537,7 @@ Ask Claude Code to invoke the `security-reviewer` agent:
 
 Run all checks and present results as a table:
 
-```
+```text
 [ok/!!] Git initialized
 [ok/!!] GitHub remote configured
 [ok/!!] CLAUDE.md created

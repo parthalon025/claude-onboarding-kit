@@ -54,7 +54,7 @@ pytest tests/ -v  # or npm test
 # Run specific acceptance test
 pytest tests/test_ac1.py -v
 ```
-```
+```text
 
 ### Step 3: Update pipeline-status.md
 ```bash

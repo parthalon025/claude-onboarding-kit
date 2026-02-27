@@ -6,7 +6,7 @@ This shows the state of a Python project after running `/setup-repo` with `claud
 
 ## Directory Structure
 
-```
+```text
 my-python-app/
 ├── .claude/
 │   ├── skills/                    # Symlinks to ~/.claude/kit/skills/

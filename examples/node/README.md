@@ -6,7 +6,7 @@ This shows the state of a Node.js project after running `/setup-repo` with `clau
 
 ## Directory Structure
 
-```
+```text
 my-node-app/
 ├── .claude/
 │   ├── skills/                    # Symlinks to ~/.claude/kit/skills/

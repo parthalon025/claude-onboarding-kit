@@ -56,7 +56,7 @@ claude-init
 
 ## What Gets Installed
 
-```
+```text
 ~/.claude/
   kit/
     VERSION                 # Kit version (1.0.0)
