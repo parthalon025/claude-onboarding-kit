@@ -14,6 +14,13 @@ ollama-code-review [--lang LANG] [--model MODEL] [--src-dir DIR] [--output FILE]
 generate-embeddings [--src-dir DIR] [--model MODEL] [--output DIR]
 lessons-db scan --target . --baseline HEAD   # Anti-pattern scanner (replaces lesson-check)
 bash tests/validate.sh   # Validate kit structure
+make lint                # Run all linters (shellcheck, yamllint, markdownlint, cspell, actionlint)
+make lint-sh             # shellcheck only
+make lint-yaml           # yamllint only
+make lint-md             # markdownlint only
+make lint-spell          # cspell only
+make lint-actions        # actionlint only
+make test                # validate + lint
 ```
 
 ## Skills (invoke in Claude Code with the Skill tool)

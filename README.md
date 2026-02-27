@@ -164,6 +164,24 @@ lint-install --only all
 lint-install --skip megalinter,sonarcloud
 ```
 
+### Running Lint
+
+After `lint-install`, use `make lint` to run all installed linters in one command:
+
+```bash
+make lint          # Run all linters
+make lint-sh       # shellcheck — Bash script correctness
+make lint-yaml     # yamllint — YAML syntax and style
+make lint-md       # markdownlint — Markdown structure
+make lint-spell    # cspell — Spelling across all files
+make lint-actions  # actionlint — GitHub Actions workflow correctness
+make test          # validate + lint (full quality gate)
+```
+
+### Graceful Failure
+
+If a tool isn't installed, `lint-install` prints a `[warn]` or `[info]` hint and continues — it never aborts the run. Python CLI tools (`yamllint`) are installed via `pipx` when available, falling back to `pip`. CI-only tools (`codeql`, `megalinter`, `sonarcloud`) just copy workflow files with no local binary needed.
+
 ## Customization
 
 ### Templates
