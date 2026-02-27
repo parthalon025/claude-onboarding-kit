@@ -1,0 +1,47 @@
+# {{PROJECT_NAME}}
+
+{{ONE_LINE_DESCRIPTION}}
+
+## Commands
+
+```bash
+pip install -e ".[dev]"    # Install with dev deps
+pytest tests/ -v           # Run all tests
+pytest tests/test_x.py -v  # Run single test file
+ruff check .               # Lint
+ruff format .              # Format
+```
+
+## Architecture
+
+- `src/{{PACKAGE}}/` — Package source
+  - `utils/` — Pure utility functions (one per file, re-export via __init__.py)
+  - `services/` — External integrations (one per file)
+  - `models/` — Data models/schemas (one per file)
+  - `lib/` — Internal shared logic
+- `tests/` — Tests (mirror src/ structure)
+
+## Code Style
+
+- Type hints on all public functions
+- f-strings over .format() or %
+- Pathlib over os.path
+- One function/class per file in utils/, services/, models/
+- Max complexity 10, max 5 args per function (enforced by ruff)
+- Barrel re-exports via __init__.py in each directory
+
+## Testing
+
+- Framework: pytest
+- Run single test: `pytest tests/test_x.py::test_name -v`
+- Mirror src/ structure in tests/
+- Use fixtures from `tests/conftest.py`
+- No mocks unless testing external services
+
+## Security
+
+This repo is public. Never write actual values from `~/.env` into any file. Use env var names, `os.environ.get()`, or `<placeholder>` syntax. Use generic names (alice, bob) not real names. Use `localhost` or `<host>` not real IPs. Hookify rules and gitleaks pre-commit enforce this.
+
+## Gotchas
+
+- {{ADD_PROJECT_SPECIFIC_GOTCHAS}}

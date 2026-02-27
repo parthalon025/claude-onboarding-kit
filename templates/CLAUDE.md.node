@@ -1,0 +1,49 @@
+# {{PROJECT_NAME}}
+
+{{ONE_LINE_DESCRIPTION}}
+
+## Commands
+
+```bash
+npm install          # Install dependencies
+npm run dev          # Start dev server
+npm run build        # Production build
+npm test             # Run test suite
+npm run lint         # Lint check
+npm run lint:fix     # Auto-fix lint issues
+npm run format       # Format code
+npm run format:check # Check formatting
+```
+
+## Architecture
+
+- `src/` — Application source code
+  - `utils/` — Pure utility functions (one per file, re-export via index.ts)
+  - `services/` — External integrations (one per file)
+  - `models/` — Types/interfaces (one per file)
+  - `lib/` — Internal shared logic
+- `tests/` — Test files (mirror src/ structure)
+
+## Code Style
+
+- ES modules (`import`/`export`), not CommonJS (`require`)
+- TypeScript strict mode
+- One function/class per file in utils/, services/, models/
+- Max 50 lines per function, max 200 lines per file (enforced by ESLint)
+- Barrel re-exports via index.ts in each directory
+
+## Testing
+
+- Framework: Vitest
+- Run single test: `npx vitest run tests/path/test.ts`
+- Mirror src/ structure in tests/
+- Use shared fixtures from `tests/setup.ts`
+- No mocks unless testing external services
+
+## Security
+
+This repo is public. Never write actual values from `~/.env` into any file. Use env var names, `process.env.VAR`, or `<placeholder>` syntax. Use generic names (alice, bob) not real names. Use `localhost` or `<host>` not real IPs. Hookify rules and gitleaks pre-commit enforce this.
+
+## Gotchas
+
+- {{ADD_PROJECT_SPECIFIC_GOTCHAS}}

@@ -1,0 +1,450 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Claude Code Project Initializer
+# Usage: claude-init [node|python|general]
+#
+# Sets up: Git, GitHub (with SEO best practices), CLAUDE.md, hookify,
+# autonomous coding toolkit, standard file structure, and GitHub community files.
+
+PROJECT_DIR="$(pwd)"
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEMPLATE_TYPE="${1:-}"
+
+echo "=== Claude Code Project Init ==="
+echo "Project: $PROJECT_NAME"
+echo "Directory: $PROJECT_DIR"
+echo ""
+
+# Auto-detect project type if not specified
+if [[ -z "$TEMPLATE_TYPE" ]]; then
+    if [[ -f "package.json" ]]; then
+        TEMPLATE_TYPE="node"
+    elif [[ -f "pyproject.toml" ]] || [[ -f "setup.py" ]] || [[ -f "requirements.txt" ]]; then
+        TEMPLATE_TYPE="python"
+    else
+        TEMPLATE_TYPE="general"
+    fi
+    echo "Auto-detected project type: $TEMPLATE_TYPE"
+fi
+
+# ===========================================
+# Phase 1: Git + GitHub
+# ===========================================
+echo "--- Phase 1: Git + GitHub ---"
+
+# Initialize git if needed
+if [[ ! -d "$PROJECT_DIR/.git" ]]; then
+    git init "$PROJECT_DIR"
+    # Create initial commit so --push works
+    git -C "$PROJECT_DIR" add -A
+    git -C "$PROJECT_DIR" commit -m "Initial commit" --allow-empty
+    echo "[+] Initialized git repository with initial commit"
+else
+    echo "[=] Git repository already exists"
+fi
+
+# Create GitHub remote if needed
+REMOTE_URL=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null || true)
+if [[ -z "$REMOTE_URL" ]]; then
+    if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
+        GH_USER=$(gh api user --jq .login 2>/dev/null || echo "")
+        if [[ -n "$GH_USER" ]]; then
+            echo "Creating private GitHub repo: $GH_USER/$PROJECT_NAME"
+            gh repo create "$GH_USER/$PROJECT_NAME" --private --source="$PROJECT_DIR" --push
+            echo "[+] Created GitHub repo and pushed"
+        else
+            echo "[!] Could not determine GitHub username, skipping repo creation"
+        fi
+    else
+        echo "[!] gh CLI not available or not authenticated, skipping repo creation"
+    fi
+else
+    echo "[=] GitHub remote already configured: $REMOTE_URL"
+fi
+
+echo ""
+
+# ===========================================
+# Phase 1.5: GitHub Best Practices
+# ===========================================
+echo "--- Phase 1.5: GitHub Best Practices ---"
+
+# Only run if we have a GitHub remote and gh CLI
+FINAL_REMOTE=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null || true)
+if [[ -n "$FINAL_REMOTE" ]] && command -v gh &>/dev/null; then
+    # Extract owner/repo from remote URL
+    REPO_SLUG=$(echo "$FINAL_REMOTE" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+
+    # --- Description ---
+    # GitHub search heavily weights the About description.
+    # Best practice: keyword-first, 5-15 words, communicate purpose immediately.
+    CURRENT_DESC=$(gh repo view "$REPO_SLUG" --json description --jq '.description // ""' 2>/dev/null || true)
+    if [[ -z "$CURRENT_DESC" ]]; then
+        echo "[!] No repo description set"
+        echo "    Set one: gh repo edit --description \"keyword-first description of $PROJECT_NAME\""
+        echo "    Tip: Start with main keyword, keep under 120 chars"
+    else
+        echo "[=] Description: $CURRENT_DESC"
+    fi
+
+    # --- Topics ---
+    # Topics are exact-match tags for GitHub search. 10-20 recommended.
+    # Categories: technology (python, node), domain (cli, web-app), community (hacktoberfest)
+    TOPIC_COUNT=$(gh repo view "$REPO_SLUG" --json repositoryTopics --jq '.repositoryTopics | length' 2>/dev/null || echo "0")
+    if [[ "$TOPIC_COUNT" -eq 0 ]]; then
+        # Auto-add topics based on project type
+        BASE_TOPICS=("developer-tools")
+        case "$TEMPLATE_TYPE" in
+            node)
+                BASE_TOPICS+=("javascript" "typescript" "nodejs")
+                ;;
+            python)
+                BASE_TOPICS+=("python" "python3")
+                ;;
+        esac
+        for topic in "${BASE_TOPICS[@]}"; do
+            gh repo edit "$REPO_SLUG" --add-topic "$topic" 2>/dev/null || true
+        done
+        echo "[+] Added ${#BASE_TOPICS[@]} default topics: ${BASE_TOPICS[*]}"
+        echo "    Add more: gh repo edit --add-topic <topic> (max 20)"
+    else
+        echo "[=] $TOPIC_COUNT topics already set"
+    fi
+
+    # --- Homepage URL ---
+    # Set to README anchor if no homepage configured
+    HOMEPAGE=$(gh repo view "$REPO_SLUG" --json homepageUrl --jq '.homepageUrl // ""' 2>/dev/null || true)
+    if [[ -z "$HOMEPAGE" ]]; then
+        gh repo edit "$REPO_SLUG" --homepage "https://github.com/$REPO_SLUG#readme" 2>/dev/null || true
+        echo "[+] Set homepage to README"
+    else
+        echo "[=] Homepage: $HOMEPAGE"
+    fi
+else
+    echo "[!] No GitHub remote or gh CLI — skipping GitHub best practices"
+fi
+
+echo ""
+
+# ===========================================
+# Phase 2: Standard File Structure
+# ===========================================
+echo "--- Phase 2: File Structure ---"
+
+# --- Standard directories ---
+mkdir -p "$PROJECT_DIR/docs/plans"
+
+case "$TEMPLATE_TYPE" in
+    node)
+        mkdir -p "$PROJECT_DIR/src" "$PROJECT_DIR/tests"
+        echo "[+] Created: src/, tests/, docs/plans/"
+        ;;
+    python)
+        # Use project name (hyphen to underscore) as package dir
+        PKG_NAME=$(echo "$PROJECT_NAME" | tr '-' '_')
+        mkdir -p "$PROJECT_DIR/src/$PKG_NAME" "$PROJECT_DIR/tests"
+        # Create __init__.py if missing
+        [[ -f "$PROJECT_DIR/src/$PKG_NAME/__init__.py" ]] || touch "$PROJECT_DIR/src/$PKG_NAME/__init__.py"
+        echo "[+] Created: src/$PKG_NAME/, tests/, docs/plans/"
+        ;;
+    *)
+        mkdir -p "$PROJECT_DIR/src" "$PROJECT_DIR/tests"
+        echo "[+] Created: src/, tests/, docs/plans/"
+        ;;
+esac
+
+# --- GitHub community files ---
+# These improve discoverability, contributor experience, and GitHub's "Community Profile" score.
+
+# LICENSE (MIT default — matches all existing repos)
+if [[ ! -f "$PROJECT_DIR/LICENSE" ]]; then
+    YEAR=$(date +%Y)
+    cat > "$PROJECT_DIR/LICENSE" <<LICEOF
+MIT License
+
+Copyright (c) $YEAR Justin McFarland
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+LICEOF
+    echo "[+] Created LICENSE (MIT)"
+else
+    echo "[=] LICENSE exists"
+fi
+
+# SECURITY.md
+if [[ ! -f "$PROJECT_DIR/SECURITY.md" ]]; then
+    cat > "$PROJECT_DIR/SECURITY.md" <<'SECEOF'
+# Security Policy
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability, please report it responsibly:
+
+1. **Do not** open a public issue
+2. Email parthalon025@gmail.com with details
+3. Include steps to reproduce if possible
+
+I will respond within 48 hours and work with you on a fix before public disclosure.
+SECEOF
+    echo "[+] Created SECURITY.md"
+else
+    echo "[=] SECURITY.md exists"
+fi
+
+# .github/ISSUE_TEMPLATE
+if [[ ! -d "$PROJECT_DIR/.github/ISSUE_TEMPLATE" ]]; then
+    mkdir -p "$PROJECT_DIR/.github/ISSUE_TEMPLATE"
+    cat > "$PROJECT_DIR/.github/ISSUE_TEMPLATE/bug_report.md" <<'BUGEOF'
+---
+name: Bug Report
+about: Report a bug to help improve the project
+labels: bug
+---
+
+**Describe the bug**
+A clear description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior.
+
+**Expected behavior**
+What you expected to happen.
+
+**Environment**
+- OS: [e.g. Ubuntu 24.04]
+- Version: [e.g. 1.0.0]
+BUGEOF
+    cat > "$PROJECT_DIR/.github/ISSUE_TEMPLATE/feature_request.md" <<'FEATEOF'
+---
+name: Feature Request
+about: Suggest a new feature or improvement
+labels: enhancement
+---
+
+**Problem**
+What problem does this solve?
+
+**Proposed Solution**
+How should it work?
+
+**Alternatives Considered**
+Other approaches you've thought about.
+FEATEOF
+    echo "[+] Created .github/ISSUE_TEMPLATE/ (bug + feature)"
+else
+    echo "[=] Issue templates exist"
+fi
+
+# .gitignore — standard entries
+if [[ ! -f "$PROJECT_DIR/.gitignore" ]]; then
+    touch "$PROJECT_DIR/.gitignore"
+fi
+
+# Add standard ignores that aren't already present
+declare -A IGNORE_MAP
+IGNORE_MAP=(
+    # Editor/OS
+    [".DS_Store"]=1 [".vscode/"]=1 [".idea/"]=1 ["*.swp"]=1
+    # Environment
+    [".env"]=1 [".env.local"]=1
+)
+
+# Type-specific ignores
+case "$TEMPLATE_TYPE" in
+    node)
+        IGNORE_MAP["node_modules/"]=1
+        IGNORE_MAP["dist/"]=1
+        IGNORE_MAP["coverage/"]=1
+        ;;
+    python)
+        IGNORE_MAP["__pycache__/"]=1
+        IGNORE_MAP["*.pyc"]=1
+        IGNORE_MAP[".venv/"]=1
+        IGNORE_MAP["*.egg-info/"]=1
+        IGNORE_MAP[".pytest_cache/"]=1
+        IGNORE_MAP["htmlcov/"]=1
+        ;;
+esac
+
+ADDED_IGNORES=0
+for pat in "${!IGNORE_MAP[@]}"; do
+    if ! grep -qxF "$pat" "$PROJECT_DIR/.gitignore" 2>/dev/null; then
+        echo "$pat" >> "$PROJECT_DIR/.gitignore"
+        ADDED_IGNORES=$((ADDED_IGNORES + 1))
+    fi
+done
+if [[ $ADDED_IGNORES -gt 0 ]]; then
+    echo "[+] Added $ADDED_IGNORES standard entries to .gitignore"
+fi
+
+echo ""
+
+# ===========================================
+# Phase 2.5: Claude Code Config
+# ===========================================
+echo "--- Phase 2.5: Claude Code Config ---"
+
+# Create .claude directory
+mkdir -p "$PROJECT_DIR/.claude"
+
+# Copy CLAUDE.md template if none exists
+if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
+    TEMPLATE="$KIT_DIR/templates/CLAUDE.md.$TEMPLATE_TYPE"
+    if [[ -f "$TEMPLATE" ]]; then
+        sed "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" "$TEMPLATE" > "$PROJECT_DIR/CLAUDE.md"
+        echo "[+] Created CLAUDE.md from $TEMPLATE_TYPE template"
+        echo "    Edit CLAUDE.md to fill in {{placeholders}}"
+    else
+        echo "[!] Template not found: $TEMPLATE"
+    fi
+else
+    echo "[=] CLAUDE.md already exists, skipping"
+fi
+
+# Copy hookify rules
+RULES_COPIED=0
+for rule in "$KIT_DIR/hookify-rules/"*.local.md; do
+    [[ -f "$rule" ]] || continue
+    RULE_NAME="$(basename "$rule")"
+    if [[ ! -f "$PROJECT_DIR/.claude/$RULE_NAME" ]]; then
+        cp "$rule" "$PROJECT_DIR/.claude/$RULE_NAME"
+        RULES_COPIED=$((RULES_COPIED + 1))
+    fi
+done
+echo "[+] Copied $RULES_COPIED hookify rules to .claude/"
+
+# Add Claude local files to .gitignore
+if [[ -d "$PROJECT_DIR/.git" ]]; then
+    if ! grep -q "\.claude\.local\.md" "$PROJECT_DIR/.gitignore" 2>/dev/null; then
+        {
+            echo ""
+            echo "# Claude Code local files"
+            echo "CLAUDE.local.md"
+            echo ".claude/*.local.md"
+        } >> "$PROJECT_DIR/.gitignore"
+        echo "[+] Added Claude local files to .gitignore"
+    fi
+fi
+
+echo ""
+
+# ===========================================
+# Phase 3: Autonomous Coding Toolkit
+# ===========================================
+echo "--- Phase 3: Autonomous Coding Toolkit ---"
+
+if command -v act &>/dev/null; then
+    act init --project-root "$PROJECT_DIR"
+    echo "[+] Toolkit initialized (tasks/, logs/, progress.txt)"
+
+    # Add toolkit state to gitignore
+    if [[ -d "$PROJECT_DIR/.git" ]]; then
+        TOOLKIT_PATTERNS=("tasks/" "logs/" "progress.txt" ".run-plan-state.json" ".worktrees/")
+        for pat in "${TOOLKIT_PATTERNS[@]}"; do
+            if ! grep -qx "$pat" "$PROJECT_DIR/.gitignore" 2>/dev/null; then
+                echo "$pat" >> "$PROJECT_DIR/.gitignore"
+            fi
+        done
+        echo "[+] Added toolkit state files to .gitignore"
+    fi
+else
+    echo "[!] 'act' not found — install: npm install -g autonomous-coding-toolkit"
+fi
+
+echo ""
+
+# ===========================================
+# Phase 4: Validation
+# ===========================================
+echo "--- Phase 4: Validation ---"
+
+# Check git
+if [[ -d "$PROJECT_DIR/.git" ]]; then
+    echo "[ok] Git initialized"
+else
+    echo "[!!] Git NOT initialized"
+fi
+
+# Check remote
+FINAL_REMOTE=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null || true)
+if [[ -n "$FINAL_REMOTE" ]]; then
+    echo "[ok] GitHub remote: $FINAL_REMOTE"
+else
+    echo "[!!] No GitHub remote configured"
+fi
+
+# Check description
+if [[ -n "$FINAL_REMOTE" ]] && command -v gh &>/dev/null; then
+    REPO_SLUG=$(echo "$FINAL_REMOTE" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+    DESC=$(gh repo view "$REPO_SLUG" --json description --jq '.description // ""' 2>/dev/null || true)
+    TOPICS=$(gh repo view "$REPO_SLUG" --json repositoryTopics --jq '.repositoryTopics | length' 2>/dev/null || echo "0")
+    if [[ -n "$DESC" ]]; then
+        echo "[ok] GitHub description set"
+    else
+        echo "[!!] GitHub description EMPTY — set via: gh repo edit --description \"...\""
+    fi
+    echo "[ok] $TOPICS GitHub topics"
+fi
+
+# Check file structure
+for f in LICENSE SECURITY.md CLAUDE.md .gitignore; do
+    if [[ -f "$PROJECT_DIR/$f" ]]; then
+        echo "[ok] $f"
+    else
+        echo "[!!] $f missing"
+    fi
+done
+
+# Check directories
+for d in src tests docs .github/ISSUE_TEMPLATE .claude; do
+    if [[ -d "$PROJECT_DIR/$d" ]]; then
+        echo "[ok] $d/"
+    else
+        echo "[!!] $d/ missing"
+    fi
+done
+
+# Check hookify rules
+RULE_COUNT=$(find "$PROJECT_DIR/.claude" -name "hookify.*.local.md" 2>/dev/null | wc -l)
+echo "[ok] $RULE_COUNT hookify rules installed"
+
+# Check toolkit
+if [[ -f "$PROJECT_DIR/progress.txt" ]]; then
+    echo "[ok] Autonomous Coding Toolkit initialized"
+else
+    echo "[!!] Toolkit not initialized (install: npm i -g autonomous-coding-toolkit)"
+fi
+
+echo ""
+echo "=== Done ==="
+echo ""
+echo "Next steps:"
+echo "  1. Set repo description: gh repo edit --description \"keyword-first description\""
+echo "  2. Add topics: gh repo edit --add-topic <topic> (10-20 recommended, max 20)"
+echo "  3. Edit CLAUDE.md — fill in {{placeholders}} with real values"
+echo "  4. Run 'claude' and start building"
+echo "  5. Run 'act gate --project-root .' to verify quality gates"
+echo ""
+echo "GitHub SEO tips:"
+echo "  - Description: start with main keyword, 5-15 words"
+echo "  - Topics: technology + domain + community tags"
+echo "  - README: keywords in first paragraph (GitHub indexes H1 + first paragraph)"
+echo "  - Engagement: regular commits, responsive issues signal active maintenance"

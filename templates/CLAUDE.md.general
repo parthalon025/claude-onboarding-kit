@@ -1,0 +1,36 @@
+# {{PROJECT_NAME}}
+
+{{ONE_LINE_DESCRIPTION}}
+
+## Commands
+
+```bash
+{{BUILD_COMMAND}}
+{{TEST_COMMAND}}
+{{LINT_COMMAND}}
+{{DEV_COMMAND}}
+```
+
+## Architecture
+
+- {{DESCRIBE_DIRECTORY_LAYOUT}}
+
+## Conventions
+
+- {{ADD_CODE_STYLE_RULES}}
+- Be direct about problems — say "this won't work because X", not "you might want to consider"
+- Never confirm work is done without running verification (use `/verify`)
+- If uncertain, say so — false confidence is worse than admitting a gap
+- Push back when a request would break something, even if the user seems sure
+
+## Testing
+
+- {{ADD_TEST_PATTERNS}}
+
+## Security
+
+This repo is public. Never write actual values from `~/.env` into any file. Use env var names or `<placeholder>` syntax. Use generic names (alice, bob) not real names. Use `localhost` or `<host>` not real IPs. Hookify rules and gitleaks pre-commit enforce this.
+
+## Gotchas
+
+- {{ADD_PROJECT_SPECIFIC_GOTCHAS}}
