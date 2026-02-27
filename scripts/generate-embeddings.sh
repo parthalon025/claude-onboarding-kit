@@ -83,7 +83,7 @@ for file in "${FILES[@]}"; do
     CONTENT=$(head -200 "$file" 2>/dev/null || true)  # First 200 lines (context limit)
     HASH=$(echo "$file" | md5sum | cut -d' ' -f1)
 
-    RESPONSE=$(curl -s --max-time 30 "$OLLAMA_URL/api/embed" \
+    RESPONSE=$(curl -s --max-time 120 "$OLLAMA_URL/api/embed" \
         -d "$(jq -n --arg model "$MODEL" --arg input "$file: $CONTENT" \
             '{model: $model, input: $input}')" 2>&1)
 

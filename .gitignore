@@ -22,3 +22,6 @@ CLAUDE.local.md
 !skills/
 !plugins/
 megalinter-reports/
+
+# Generated embeddings (local, never commit)
+.embeddings/
