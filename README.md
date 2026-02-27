@@ -27,7 +27,7 @@ claude-init
 | Phase | What | Details |
 |-------|------|---------|
 | 1 | **Gather info** | Project name, type, description, visibility, feature toggles |
-| 2 | **Scaffold** | Git init, GitHub repo, CLAUDE.md from template, hookify safety rules |
+| 2 | **Scaffold** | Git init, GitHub repo, CLAUDE.md from template (with AI workflow discipline), hookify safety rules, PR template |
 | 3 | **GitHub settings** | Description, topics, homepage, optional branch protection |
 | 4 | **Gitleaks** | Pre-commit hook + `.pre-commit-config.yaml`, `.gitignore` hardening |
 | 4.5 | **Code quality** | Auto-detect linters/formatters, generate Makefile + CI (26 plugins) |
@@ -44,8 +44,8 @@ claude-init
 ~/.claude/
   kit/
     config.env              # Your configuration
-    templates/              # CLAUDE.md templates (node, python, general)
-    hookify-rules/          # Safety rules (4 rules)
+    templates/              # CLAUDE.md templates (node, python, general) + PR template
+    hookify-rules/          # Safety rules (5 rules)
     workflows/              # CI workflow templates (security, release)
     hooks/                  # Session hook templates (node, python)
     plugins/                # Code quality plugins (26 plugins)
@@ -143,6 +143,10 @@ lint-install --skip megalinter,sonarcloud
 ### Templates
 
 Edit files in `templates/` before installing, or edit directly in `~/.claude/kit/templates/` after. Templates use `{{PLACEHOLDER}}` syntax — `claude-init` replaces `{{PROJECT_NAME}}` automatically; others are filled in manually or by `/setup-repo`.
+
+Every `CLAUDE.md` template ships with an `## AI Workflow` section encoding five core disciplines: spec-first development, narrow slices, multi-pass critique, run-locally verification, and context reset cadence. Edit this section to match your team's conventions.
+
+`pull_request_template.md` is dropped into `.github/` of every new project with a checklist that includes AI-generated code review — reminding reviewers not to blind-trust model output.
 
 ### Hookify Rules
 
