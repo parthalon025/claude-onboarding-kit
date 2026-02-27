@@ -21,3 +21,4 @@ CLAUDE.local.md
 # Override parent .gitignore — these are part of the kit
 !skills/
 !plugins/
+megalinter-reports/
