@@ -194,7 +194,7 @@ git commit -m "fix: remove lesson-check from install — use lessons-db"
 ### Task 3: Update Documents/scripts/ollama-code-review.sh → thin wrapper
 
 **Files:**
-- Modify: `/home/justin/Documents/scripts/ollama-code-review.sh`
+- Modify: `~/Documents/scripts/ollama-code-review.sh`
 
 **Step 1: Check current file**
 ```bash
@@ -238,7 +238,7 @@ cd ~/Documents/projects/claude-onboarding-kit
 ### Task 4: Audit ACT for lesson-check references
 
 **Files:**
-- Modify: various files in `/home/justin/Documents/projects/autonomous-coding-toolkit/`
+- Modify: various files in `~/Documents/projects/autonomous-coding-toolkit/`
 
 **Step 1: Find all lesson-check references in ACT**
 ```bash

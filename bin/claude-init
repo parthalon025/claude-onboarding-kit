@@ -217,7 +217,8 @@ fi
 
 # SECURITY.md
 if [[ ! -f "$PROJECT_DIR/SECURITY.md" ]]; then
-    cat > "$PROJECT_DIR/SECURITY.md" <<'SECEOF'
+    _SECURITY_EMAIL="$(git -C "$PROJECT_DIR" config user.email 2>/dev/null || echo 'maintainer@example.com')"
+    cat > "$PROJECT_DIR/SECURITY.md" <<SECEOF
 # Security Policy
 
 ## Reporting a Vulnerability
@@ -225,7 +226,7 @@ if [[ ! -f "$PROJECT_DIR/SECURITY.md" ]]; then
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do not** open a public issue
-2. Email parthalon025@gmail.com with details
+2. Email ${_SECURITY_EMAIL} with details
 3. Include steps to reproduce if possible
 
 I will respond within 48 hours and work with you on a fix before public disclosure.
