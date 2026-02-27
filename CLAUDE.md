@@ -18,8 +18,8 @@ lesson-check [--project-root .] [--staged-only]
 ## Architecture
 
 - `install.sh` / `uninstall.sh` — install/remove the kit system-wide
-- `bin/claude-init` — legacy standalone quick-scaffold script (not installed by `install.sh`; use `scripts/claude-init.sh` instead)
-- `scripts/` — all installable scripts: `claude-init.sh`, `lint-install.sh`, `ollama-code-review.sh`, `generate-embeddings.sh`, `lesson-check.sh`
+- `bin/claude-init` — canonical bootstrap script; `install.sh` symlinks `~/.local/bin/claude-init` here
+- `scripts/` — installable scripts: `lint-install.sh`, `ollama-code-review.sh`, `generate-embeddings.sh`, `lesson-check.sh`
 - `skills/setup-repo/SKILL.md` — the `/setup-repo` Claude skill (10-phase pipeline)
 - `templates/` — CLAUDE.md starters (`CLAUDE.md.node`, `CLAUDE.md.python`, `CLAUDE.md.general`) + `pull_request_template.md`
 - `hookify-rules/` — 5 portable safety rules copied into new projects
@@ -42,7 +42,7 @@ lesson-check [--project-root .] [--staged-only]
 
 ## Conventions
 
-- `~/.local/bin/claude-init` is installed from `scripts/claude-init.sh` by `install.sh` — edit `scripts/claude-init.sh`, not `bin/claude-init`
+- `~/.local/bin/claude-init` is a symlink to `bin/claude-init` — always edit `bin/claude-init`
 - Hookify rules use `hookify.*.local.md` naming (git-ignored in target projects)
 - Templates use `{{PLACEHOLDER}}` tokens replaced by `sed` at init time
 - Plugin files declare their tier in a `TIER=` variable; `lib.sh` is shared library, not a plugin
