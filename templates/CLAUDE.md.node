@@ -38,6 +38,14 @@ npm run lint -- --fix # Auto-fix lint issues
 - Reference secrets by env var name only
 - Use `process.env.VAR_NAME` with fallback defaults
 
+## AI Workflow
+
+- Every feature: **Spec → Plan → Code → Test → Refactor** — never skip spec/plan
+- One module at a time (narrow slices) — no big-bang system generation
+- Never accept first output — run a critique pass before committing
+- Always run code locally before claiming done — paste exact errors, not descriptions
+- `/clear` after ~20 file reads or major topic shifts
+
 ## Gotchas
 
 - {{ADD_PROJECT_SPECIFIC_GOTCHAS}}

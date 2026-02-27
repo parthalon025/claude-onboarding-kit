@@ -253,6 +253,17 @@ else
     echo "[=] Issue templates exist"
 fi
 
+# .github/pull_request_template.md
+if [[ ! -f "$PROJECT_DIR/.github/pull_request_template.md" ]]; then
+    PR_TEMPLATE="$KIT_DIR/templates/pull_request_template.md"
+    if [[ -f "$PR_TEMPLATE" ]]; then
+        cp "$PR_TEMPLATE" "$PROJECT_DIR/.github/pull_request_template.md"
+        echo "[+] Created .github/pull_request_template.md"
+    fi
+else
+    echo "[=] PR template exists"
+fi
+
 # .gitignore — standard entries
 if [[ ! -f "$PROJECT_DIR/.gitignore" ]]; then
     touch "$PROJECT_DIR/.gitignore"
@@ -312,6 +323,7 @@ if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
         sed "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" "$TEMPLATE" > "$PROJECT_DIR/CLAUDE.md"
         echo "[+] Created CLAUDE.md from $TEMPLATE_TYPE template"
         echo "    Edit CLAUDE.md to fill in {{placeholders}}"
+        echo "    AI workflow guide: ~/.claude/docs/ai-coding-workflows.md"
     else
         echo "[!] Template not found: $TEMPLATE"
     fi
