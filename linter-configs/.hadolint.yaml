@@ -1,0 +1,12 @@
+# Hadolint configuration
+# https://github.com/hadolint/hadolint#configure
+
+ignored:
+  # DL3008: Pin versions in apt-get install
+  - DL3008
+  # DL3013: Pin versions in pip install (handled by requirements.txt)
+  - DL3013
+
+trustedRegistries:
+  - docker.io
+  - ghcr.io

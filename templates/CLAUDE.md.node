@@ -10,39 +10,33 @@ npm run dev          # Start dev server
 npm run build        # Production build
 npm test             # Run test suite
 npm run lint         # Lint check
-npm run lint:fix     # Auto-fix lint issues
-npm run format       # Format code
-npm run format:check # Check formatting
+npm run lint -- --fix # Auto-fix lint issues
 ```
 
 ## Architecture
 
 - `src/` — Application source code
-  - `utils/` — Pure utility functions (one per file, re-export via index.ts)
-  - `services/` — External integrations (one per file)
-  - `models/` — Types/interfaces (one per file)
-  - `lib/` — Internal shared logic
 - `tests/` — Test files (mirror src/ structure)
+- `package.json` — Dependencies and scripts
 
 ## Code Style
 
-- ES modules (`import`/`export`), not CommonJS (`require`)
-- TypeScript strict mode
-- One function/class per file in utils/, services/, models/
-- Max 50 lines per function, max 200 lines per file (enforced by ESLint)
-- Barrel re-exports via index.ts in each directory
+- ES modules (import/export), not CommonJS (require)
+- Destructure imports: `import { foo } from 'bar'`
+- TypeScript strict mode where applicable
+- Max 200 lines per file, max 50 lines per function
 
 ## Testing
 
-- Framework: Vitest
-- Run single test: `npx vitest run tests/path/test.ts`
-- Mirror src/ structure in tests/
-- Use shared fixtures from `tests/setup.ts`
+- Run single test files, not full suite, during development
+- Prefer `describe`/`it` blocks with descriptive names
 - No mocks unless testing external services
 
 ## Security
 
-This repo is public. Never write actual values from `~/.env` into any file. Use env var names, `process.env.VAR`, or `<placeholder>` syntax. Use generic names (alice, bob) not real names. Use `localhost` or `<host>` not real IPs. Hookify rules and gitleaks pre-commit enforce this.
+- Never commit `.env`, API keys, or credentials
+- Reference secrets by env var name only
+- Use `process.env.VAR_NAME` with fallback defaults
 
 ## Gotchas
 

@@ -1,50 +1,169 @@
 # claude-onboarding-kit
 
-Bootstrap script and templates for Claude Code project setup. Run one command in any new project directory to get git, GitHub, CLAUDE.md, hookify safety rules, and standard directory structure — all wired up.
+Self-contained kit that bootstraps any new project with a full autonomous development pipeline — CI/CD, security scanning, Claude Code web support, quality gates, local AI code review, semantic code search, and lessons learned tracking. Run one command, get a production-ready repo.
 
-## Usage
+## Quick Start
 
 ```bash
-cd my-new-project
-claude-init           # auto-detects node/python/general
-claude-init python    # explicit type
+git clone https://github.com/parthalon025/claude-onboarding-kit.git
+cd claude-onboarding-kit
+cp config.env.example ~/.claude/kit/config.env  # or let install.sh do it
+# Edit config.env: set GITHUB_ORG at minimum
+bash install.sh
 ```
 
-## What It Sets Up
-
-| Component | Details |
-|-----------|---------|
-| Git + GitHub | `git init`, private repo, push |
-| GitHub metadata | Description prompt, auto-topics, homepage |
-| Directory structure | `src/`, `tests/`, `docs/plans/` |
-| Community files | `LICENSE` (MIT), `SECURITY.md`, issue templates |
-| Claude Code | `CLAUDE.md` from template, `.claude/` hookify rules |
-| `.gitignore` | Language-appropriate entries + Claude local files |
-
-## Installation
+Then in any project:
 
 ```bash
-git clone git@github.com:parthalon025/claude-onboarding-kit.git ~/Documents/projects/claude-onboarding-kit
-ln -sf ~/Documents/projects/claude-onboarding-kit/bin/claude-init ~/.local/bin/claude-init
-chmod +x ~/Documents/projects/claude-onboarding-kit/bin/claude-init
+# In Claude Code, run the skill:
+/setup-repo
+
+# Or for quick scaffold without the interactive pipeline:
+claude-init
+```
+
+## What `/setup-repo` Sets Up
+
+| Phase | What | Details |
+|-------|------|---------|
+| 1 | **Gather info** | Project name, type, description, visibility, feature toggles |
+| 2 | **Scaffold** | Git init, GitHub repo, CLAUDE.md from template, hookify safety rules |
+| 3 | **GitHub settings** | Description, topics, homepage, optional branch protection |
+| 4 | **Gitleaks** | Pre-commit hook + `.pre-commit-config.yaml`, `.gitignore` hardening |
+| 4.5 | **Code quality** | Auto-detect linters/formatters, generate Makefile + CI (26 plugins) |
+| 5 | **Session hook** | Claude Code web session-start hook (auto-install deps) |
+| 6 | **CI workflows** | `security.yml` (gitleaks scan), `release.yml` (tag-based releases) |
+| 7 | **Quality gates** | Lesson-check pre-commit hook, `docs/lessons/` directory |
+| 8 | **AI code review** | Ollama-powered code review via local LLM |
+| 9 | **Embeddings** | Semantic code search via nomic-embed-text |
+| 10 | **Verification** | Status table of all checks, next steps |
+
+## What Gets Installed
+
+```
+~/.claude/
+  kit/
+    config.env              # Your configuration
+    templates/              # CLAUDE.md templates (node, python, general)
+    hookify-rules/          # Safety rules (4 rules)
+    workflows/              # CI workflow templates (security, release)
+    hooks/                  # Session hook templates (node, python)
+    plugins/                # Code quality plugins (26 plugins)
+    linter-configs/         # Config templates for linters/formatters
+  skills/
+    setup-repo/SKILL.md     # The /setup-repo skill
+
+~/.local/bin/
+  claude-init               # Project initializer
+  lint-install              # Auto-detect & install code quality tools
+  ollama-code-review        # AI code review (any language)
+  generate-embeddings       # Semantic code embeddings
+  lesson-check              # Anti-pattern scanner
+```
+
+## Configuration
+
+Edit `~/.claude/kit/config.env`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GITHUB_ORG` | `your-username` | GitHub org/username for repo creation |
+| `DEFAULT_VISIBILITY` | `private` | Default repo visibility |
+| `OLLAMA_URL` | `http://localhost:11434` | Ollama API endpoint |
+| `OLLAMA_REVIEW_MODEL` | `qwen2.5-coder:14b` | Model for code review |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Model for embeddings |
+| `TEMPLATE_NODE_REPO` | (empty) | Template repo for Node projects |
+| `TEMPLATE_PYTHON_REPO` | (empty) | Template repo for Python projects |
+
+## Requirements
+
+**Required:**
+- Git
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+
+**Recommended:**
+- [GitHub CLI](https://cli.github.com/) (`gh`) — for repo creation and settings
+- [pre-commit](https://pre-commit.com/) — for gitleaks hook
+
+**Optional (features degrade gracefully without these):**
+- [Ollama](https://ollama.com/) — for AI code review and semantic embeddings
+- `jq` — for embedding generation
+- `curl` — for ollama API calls
+
+## Standalone Scripts
+
+Each script works independently, outside of `/setup-repo`:
+
+```bash
+# Initialize a project with CLAUDE.md and safety rules
+claude-init [node|python|general]
+
+# Auto-detect & install code quality tools (linters, formatters, CI)
+lint-install [--dry-run] [--only core|recommended|all] [--skip PLUGIN] [--project-root DIR]
+
+# Run AI code review on a project
+ollama-code-review [--lang python] [--model deepseek-coder:6.7b] ./my-project
+
+# Generate semantic embeddings for code search
+generate-embeddings [--model nomic-embed-text] [--src-dir src/]
+
+# Check for anti-patterns in changed files
+lesson-check [--project-root .] [--staged-only]
+```
+
+## Code Quality Plugins
+
+`lint-install` auto-detects project content and installs appropriate tools using a plugin system:
+
+| Tier | Plugins | Auto-detects |
+|------|---------|-------------|
+| **Core** | shellcheck, eslint, ruff, prettier, editorconfig | Shell scripts, Node.js, Python, all projects |
+| **Recommended** | typescript, mypy, npm-audit, pip-audit, commitlint, lint-staged, pre-commit, cspell | TypeScript, Python types, lock files, git repos |
+| **Advanced** | actionlint, markdownlint, yamllint, hadolint, knip, vulture, size-limit, coverage, codeql, sonarcloud, codety, megalinter, release-please | GitHub Actions, Dockerfiles, CI integrations |
+
+```bash
+# List all available plugins
+lint-install --list
+
+# Preview what would be installed
+lint-install --dry-run
+
+# Install core + recommended (default)
+lint-install
+
+# Install everything including advanced CI integrations
+lint-install --only all
+
+# Skip specific plugins
+lint-install --skip megalinter,sonarcloud
 ```
 
 ## Customization
 
-- **Templates:** Edit `templates/CLAUDE.md.{node,python,general}` — `{{PLACEHOLDER}}` tokens are replaced at init time
-- **Hookify rules:** Add/edit files in `hookify-rules/` — copied into `.claude/` of each new project
-- **Script:** `bin/claude-init` — `KIT_DIR` is derived from the script's own location, so the repo is self-contained
+### Templates
 
-## Structure
+Edit files in `templates/` before installing, or edit directly in `~/.claude/kit/templates/` after. Templates use `{{PLACEHOLDER}}` syntax — `claude-init` replaces `{{PROJECT_NAME}}` automatically; others are filled in manually or by `/setup-repo`.
 
+### Hookify Rules
+
+Four safety rules are included. To customize:
+- Edit rules in `hookify-rules/` before installing
+- Or edit in `~/.claude/kit/hookify-rules/` after
+- Set `enabled: false` in frontmatter to disable a rule
+- Add new `.local.md` files following the same format
+
+### Workflows
+
+CI workflow templates in `workflows/` are copied to new projects. Modify them to match your CI needs (different runners, additional checks, etc.).
+
+## Uninstall
+
+```bash
+bash uninstall.sh
 ```
-claude-onboarding-kit/
-├── bin/
-│   └── claude-init          # bootstrap script
-├── templates/
-│   ├── CLAUDE.md.node
-│   ├── CLAUDE.md.python
-│   └── CLAUDE.md.general
-└── hookify-rules/
-    └── hookify.*.local.md   # safety rules
-```
+
+Removes all installed files. Project files created by `/setup-repo` are not affected.
+
+## License
+
+MIT
