@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate kit structure
+        run: bash tests/validate.sh
+
+      - name: Shellcheck
+        run: |
+          find . -name "*.sh" -not -path "./_archived/*" \
+            | sort | xargs shellcheck

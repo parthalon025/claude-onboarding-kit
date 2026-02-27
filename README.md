@@ -134,7 +134,7 @@ ollama-code-review [--lang python] [--model deepseek-coder:6.7b] ./my-project
 generate-embeddings [--model nomic-embed-text] [--src-dir src/]
 
 # Check for anti-patterns in staged files (replaces lesson-check)
-lessons-db scan --staged-only
+lessons-db scan --target . --baseline HEAD
 ```
 
 ## Code Quality Plugins

@@ -99,7 +99,7 @@ npm audit                  # npm dependency audit
 
 # Lessons / anti-patterns
 lesson-check --project-root .          # Check for known anti-patterns
-lesson-check --staged-only             # Check only staged files (pre-commit use)
+lessons-db scan --target . --baseline HEAD             # Check only staged files (pre-commit use)
 
 # Project skills (invoke via Claude Code)
 /setup-repo                # Re-run or update pipeline phases

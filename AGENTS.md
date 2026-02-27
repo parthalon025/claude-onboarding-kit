@@ -1,24 +1,24 @@
-# AGENTS.md — {{PROJECT_NAME}}
+# AGENTS.md — claude-onboarding-kit
 
 Instructions for AI agents and Claude Code operating in this repository.
 
 ## Quick Start
 ```bash
-{{INSTALL_COMMAND}}
-{{TEST_COMMAND}}
+bash install.sh
+make test
 ```
 
 ## Architecture
-{{ONE_LINE_DESCRIPTION}}
+Bootstrap kit — install once, run /setup-repo in any project.
 
 Key directories:
-- `src/` or `{{PACKAGE}}/` — source code
+- `bin/`, `scripts/`, `skills/`, `templates/` — kit source
 - `tests/` — test suite
 - `docs/plans/` — implementation plans and tech specs
 - `tasks/` — PRD, risk log, pipeline status
 
 ## Commands Agents Must Know
-- Run tests: `{{TEST_COMMAND}}`
+- Run tests: `make test`
 - Lint: `make lint`
 - Format: `make format`
 - Check lessons: `lessons-db scan --target . --baseline HEAD`

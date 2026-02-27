@@ -1,8 +1,14 @@
-.PHONY: lint lint-sh
+.PHONY: lint validate test install
 
-all: lint
+lint:
+	@echo "Running shellcheck on all .sh files..."
+	@find . -name "*.sh" -not -path "./_archived/*" -not -path "./node_modules/*" \
+	  | sort | xargs shellcheck && echo "shellcheck: all clean"
 
-lint: lint-sh
+validate:
+	@bash tests/validate.sh
 
-lint-sh:
-	shellcheck scripts/*.sh plugins/*.sh hooks/*.sh install.sh uninstall.sh
+test: validate lint
+
+install:
+	@bash install.sh

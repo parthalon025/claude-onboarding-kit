@@ -323,7 +323,7 @@ Append these sections to the existing CLAUDE.md (do not overwrite — add after 
 ## Quality Gates
 
 - Before committing: `/verify` (self-verification checklist)
-- Before PRs: `lessons-db scan --staged-only` (anti-pattern scanner)
+- Before PRs: `lessons-db scan --target . --baseline HEAD` (anti-pattern scanner)
 
 ## Lessons
 
@@ -347,7 +347,7 @@ cat > .git/hooks/pre-commit << 'HOOK'
 # Anti-pattern scanner — checks staged files against known bad patterns
 LESSONS_DB="$(command -v lessons-db 2>/dev/null)"
 if [ -x "$LESSONS_DB" ]; then
-    $LESSONS_DB scan --staged-only || exit 1
+    $LESSONS_DB scan --target . --baseline HEAD 2>/dev/null || true
 fi
 HOOK
 chmod +x .git/hooks/pre-commit

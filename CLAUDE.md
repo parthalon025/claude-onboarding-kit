@@ -12,7 +12,7 @@ claude-init [node|python|general] [--product|--lib]   # Quick scaffold (no inter
 lint-install [--dry-run] [--only core|recommended|all] [--skip PLUGIN] [--project-root DIR]
 ollama-code-review [--lang LANG] [--model MODEL] [--src-dir DIR] [--output FILE] <dir>
 generate-embeddings [--src-dir DIR] [--model MODEL] [--output DIR]
-lessons-db scan --staged-only   # Anti-pattern scanner (replaces lesson-check)
+lessons-db scan --target . --baseline HEAD   # Anti-pattern scanner (replaces lesson-check)
 bash tests/validate.sh   # Validate kit structure
 ```
 
@@ -35,7 +35,7 @@ bash tests/validate.sh   # Validate kit structure
 - `install.sh` / `uninstall.sh` — install/remove the kit system-wide
 - `bin/claude-init` — canonical bootstrap script; `install.sh` symlinks `~/.local/bin/claude-init` here
 - `scripts/` — installable scripts: `lint-install.sh`, `ollama-code-review.sh`, `generate-embeddings.sh`
-- `_archived/lesson-check.sh` — deprecated; use `lessons-db scan --staged-only` instead
+- `_archived/lesson-check.sh` — deprecated; use `lessons-db scan --target . --baseline HEAD` instead
 - `skills/setup-repo/SKILL.md` — the `/setup-repo` Claude skill (14-phase pipeline)
 - `skills/create-*/SKILL.md` — 8 lifecycle skills (tech-spec, risk-log, qa-plan, adr, retrospective, mrd, roadmap, release-plan)
 - `templates/` — CLAUDE.md starters (`CLAUDE.md.node`, `CLAUDE.md.python`, `CLAUDE.md.general`) + `pull_request_template.md`
