@@ -74,10 +74,11 @@ echo "[+] claude-init → $BIN_DEST/claude-init (symlink)"
 for script in "$KIT_SOURCE/scripts/"*.sh; do
     name="$(basename "$script" .sh)"
     [[ "$name" == "claude-init" ]] && continue  # handled above
+    [[ "$name" == "lesson-check" ]] && continue  # archived — use: lessons-db scan --staged-only
     cp "$script" "$BIN_DEST/$name"
     chmod +x "$BIN_DEST/$name"
 done
-echo "[+] Scripts → $BIN_DEST/{ollama-code-review,generate-embeddings,lesson-check,lint-install}"
+echo "[+] Scripts → $BIN_DEST/{ollama-code-review,generate-embeddings,lint-install}"
 
 # --- Verify PATH ---
 if ! echo "$PATH" | grep -q "$BIN_DEST"; then
