@@ -56,31 +56,29 @@ if [[ -z "$SRC_DIRS" ]]; then
     fi
 fi
 
-FILES=""
+declare -a FILES=()
 for dir in $SRC_DIRS; do
     [[ -d "$dir" ]] || continue
     if [[ -f "package.json" ]]; then
-        FILES="$FILES $(find "$dir" -name "*.ts" -o -name "*.js" -o -name "*.tsx" -o -name "*.jsx" 2>/dev/null | grep -v node_modules || true)"
+        while IFS= read -r f; do FILES+=("$f"); done < <(find "$dir" -name "*.ts" -o -name "*.js" -o -name "*.tsx" -o -name "*.jsx" 2>/dev/null | grep -v node_modules || true)
     elif [[ -f "pyproject.toml" ]] || [[ -f "setup.py" ]]; then
-        FILES="$FILES $(find "$dir" -name "*.py" 2>/dev/null | grep -v __pycache__ || true)"
+        while IFS= read -r f; do FILES+=("$f"); done < <(find "$dir" -name "*.py" 2>/dev/null | grep -v __pycache__ || true)
     else
-        FILES="$FILES $(find "$dir" -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.rs" 2>/dev/null || true)"
+        while IFS= read -r f; do FILES+=("$f"); done < <(find "$dir" \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.rs" \) 2>/dev/null || true)
     fi
 done
 
-# Trim whitespace and count
-FILES=$(echo "$FILES" | xargs)
-if [[ -z "$FILES" ]]; then
+if [[ ${#FILES[@]} -eq 0 ]]; then
     echo "No source files found to embed."
     exit 0
 fi
 
-TOTAL=$(echo "$FILES" | wc -w)
+TOTAL=${#FILES[@]}
 echo "Generating embeddings for $TOTAL files using $MODEL..."
 
 COUNT=0
 ERRORS=0
-for file in $FILES; do
+for file in "${FILES[@]}"; do
     COUNT=$((COUNT + 1))
     CONTENT=$(head -200 "$file" 2>/dev/null || true)  # First 200 lines (context limit)
     HASH=$(echo "$file" | md5sum | cut -d' ' -f1)

@@ -9,8 +9,25 @@ set -euo pipefail
 
 PROJECT_DIR="$(pwd)"
 PROJECT_NAME="$(basename "$PROJECT_DIR")"
-KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Resolve symlinks so KIT_DIR points to the actual repo (not ~/.local/bin/../)
+if command -v realpath &>/dev/null; then
+    _SCRIPT_REAL="$(realpath "${BASH_SOURCE[0]}")"
+else
+    _SCRIPT_REAL="${BASH_SOURCE[0]}"
+fi
+KIT_DIR="$(cd "$(dirname "$_SCRIPT_REAL")/.." && pwd)"
+
+# Load config — check installed path first, then fall back to repo-local
+_CONFIG="$HOME/.claude/kit/config.env"
+[[ -f "$_CONFIG" ]] || _CONFIG="$KIT_DIR/config.env.example"
+[[ -f "$_CONFIG" ]] && source "$_CONFIG"
+
+GITHUB_ORG="${GITHUB_ORG:-}"
+DEFAULT_VISIBILITY="${DEFAULT_VISIBILITY:-private}"
 TEMPLATE_TYPE="${1:-}"
+# Compute package name early (used in template substitution)
+PKG_NAME="$(echo "$PROJECT_NAME" | tr '-' '_')"
 
 echo "=== Claude Code Project Init ==="
 echo "Project: $PROJECT_NAME"
@@ -37,8 +54,7 @@ echo "--- Phase 1: Git + GitHub ---"
 # Initialize git if needed
 if [[ ! -d "$PROJECT_DIR/.git" ]]; then
     git init "$PROJECT_DIR"
-    # Create initial commit so --push works
-    git -C "$PROJECT_DIR" add -A
+    # Empty initial commit — files staged after .gitignore exists (Phase 2)
     git -C "$PROJECT_DIR" commit -m "Initial commit" --allow-empty
     echo "[+] Initialized git repository with initial commit"
 else
@@ -49,10 +65,10 @@ fi
 REMOTE_URL=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null || true)
 if [[ -z "$REMOTE_URL" ]]; then
     if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-        GH_USER=$(gh api user --jq .login 2>/dev/null || echo "")
-        if [[ -n "$GH_USER" ]]; then
-            echo "Creating private GitHub repo: $GH_USER/$PROJECT_NAME"
-            gh repo create "$GH_USER/$PROJECT_NAME" --private --source="$PROJECT_DIR" --push
+        _REPO_OWNER="${GITHUB_ORG:-$(gh api user --jq .login 2>/dev/null || echo "")}"
+        if [[ -n "$_REPO_OWNER" ]]; then
+            echo "Creating $DEFAULT_VISIBILITY GitHub repo: $_REPO_OWNER/$PROJECT_NAME"
+            gh repo create "$_REPO_OWNER/$PROJECT_NAME" --"$DEFAULT_VISIBILITY" --source="$PROJECT_DIR" --push
             echo "[+] Created GitHub repo and pushed"
         else
             echo "[!] Could not determine GitHub username, skipping repo creation"
@@ -320,7 +336,8 @@ mkdir -p "$PROJECT_DIR/.claude"
 if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
     TEMPLATE="$KIT_DIR/templates/CLAUDE.md.$TEMPLATE_TYPE"
     if [[ -f "$TEMPLATE" ]]; then
-        sed "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" "$TEMPLATE" > "$PROJECT_DIR/CLAUDE.md"
+        sed -e "s/{{PROJECT_NAME}}/$PROJECT_NAME/g" \
+            -e "s/{{PACKAGE}}/$PKG_NAME/g" "$TEMPLATE" > "$PROJECT_DIR/CLAUDE.md"
         echo "[+] Created CLAUDE.md from $TEMPLATE_TYPE template"
         echo "    Edit CLAUDE.md to fill in {{placeholders}}"
         echo "    AI workflow guide: ~/.claude/docs/ai-coding-workflows.md"

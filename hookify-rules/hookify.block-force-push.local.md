@@ -1,5 +1,5 @@
 ---
-name: warn-force-push
+name: block-force-push
 enabled: true
 event: bash
 pattern: git\s+push\s+.*--force|git\s+push\s+-f

@@ -25,8 +25,8 @@ fi
 # --- Remove scripts ---
 SCRIPTS=(claude-init ollama-code-review generate-embeddings lesson-check lint-install)
 for script in "${SCRIPTS[@]}"; do
-    if [[ -f "$BIN_DEST/$script" ]]; then
-        rm "$BIN_DEST/$script"
+    if [[ -f "$BIN_DEST/$script" ]] || [[ -L "$BIN_DEST/$script" ]]; then
+        rm -f "$BIN_DEST/$script"
         echo "[x] Removed $BIN_DEST/$script"
     fi
 done

@@ -60,10 +60,6 @@ check_pattern() {
 check_pattern "Bare except with pass/return (swallows errors silently)" \
     "except[^:]*:\s*(pass|return\b)" "*.py" "HIGH"
 
-# async def without await (likely sync function marked async)
-check_pattern "async def without any await in function body" \
-    "^\s*async\s+def\s+\w+" "*.py" "MEDIUM"
-
 # Hardcoded secrets patterns
 check_pattern "Possible hardcoded secret or API key" \
     "(api_key|secret|password|token)\s*=\s*['\"][^'\"]{8,}" "*" "HIGH"

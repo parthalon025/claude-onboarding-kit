@@ -14,32 +14,32 @@ echo ""
 
 # --- Templates ---
 mkdir -p "$KIT_DEST/templates"
-cp "$KIT_SOURCE/templates/"* "$KIT_DEST/templates/"
+cp -r "$KIT_SOURCE/templates/." "$KIT_DEST/templates/"
 echo "[+] Templates → $KIT_DEST/templates/"
 
 # --- Hookify rules ---
 mkdir -p "$KIT_DEST/hookify-rules"
-cp "$KIT_SOURCE/hookify-rules/"* "$KIT_DEST/hookify-rules/"
+cp -r "$KIT_SOURCE/hookify-rules/." "$KIT_DEST/hookify-rules/"
 echo "[+] Hookify rules → $KIT_DEST/hookify-rules/"
 
 # --- Workflow templates ---
 mkdir -p "$KIT_DEST/workflows"
-cp "$KIT_SOURCE/workflows/"* "$KIT_DEST/workflows/"
+cp -r "$KIT_SOURCE/workflows/." "$KIT_DEST/workflows/"
 echo "[+] Workflow templates → $KIT_DEST/workflows/"
 
 # --- Hook templates ---
 mkdir -p "$KIT_DEST/hooks"
-cp "$KIT_SOURCE/hooks/"* "$KIT_DEST/hooks/"
+cp -r "$KIT_SOURCE/hooks/." "$KIT_DEST/hooks/"
 echo "[+] Hook templates → $KIT_DEST/hooks/"
 
 # --- Plugins ---
 mkdir -p "$KIT_DEST/plugins"
-cp "$KIT_SOURCE/plugins/"* "$KIT_DEST/plugins/"
+cp -r "$KIT_SOURCE/plugins/." "$KIT_DEST/plugins/"
 echo "[+] Plugins → $KIT_DEST/plugins/"
 
 # --- Linter configs ---
 mkdir -p "$KIT_DEST/linter-configs"
-cp "$KIT_SOURCE/linter-configs/"* "$KIT_DEST/linter-configs/"
+cp -r "$KIT_SOURCE/linter-configs/." "$KIT_DEST/linter-configs/"
 echo "[+] Linter configs → $KIT_DEST/linter-configs/"
 
 # --- Config (don't overwrite existing) ---
@@ -57,12 +57,20 @@ echo "[+] Skill → $SKILL_DEST/SKILL.md"
 
 # --- Scripts ---
 mkdir -p "$BIN_DEST"
+
+# claude-init: symlink to bin/ so KIT_DIR resolves correctly via realpath
+ln -sf "$KIT_SOURCE/bin/claude-init" "$BIN_DEST/claude-init"
+chmod +x "$KIT_SOURCE/bin/claude-init"
+echo "[+] claude-init → $BIN_DEST/claude-init (symlink)"
+
+# Other scripts: copy from scripts/
 for script in "$KIT_SOURCE/scripts/"*.sh; do
     name="$(basename "$script" .sh)"
+    [[ "$name" == "claude-init" ]] && continue  # handled above
     cp "$script" "$BIN_DEST/$name"
     chmod +x "$BIN_DEST/$name"
 done
-echo "[+] Scripts → $BIN_DEST/{claude-init,ollama-code-review,generate-embeddings,lesson-check,lint-install}"
+echo "[+] Scripts → $BIN_DEST/{ollama-code-review,generate-embeddings,lesson-check,lint-install}"
 
 # --- Verify PATH ---
 if ! echo "$PATH" | grep -q "$BIN_DEST"; then
