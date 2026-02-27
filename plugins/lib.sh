@@ -89,9 +89,11 @@ pip_install() {
     if [[ ${#to_install[@]} -gt 0 ]]; then
         echo "  Installing: ${to_install[*]}"
         if command -v pipx &>/dev/null; then
-            for d in "${to_install[@]}"; do pipx install "$d"; done
+            for d in "${to_install[@]}"; do pipx install "$d" || echo "  [warn] pipx install $d failed — install manually"; done
+        elif pip install "${to_install[@]}" 2>/dev/null; then
+            : # success
         else
-            pip install "${to_install[@]}"
+            echo "  [warn] pip install failed — install manually: pip install ${to_install[*]}"
         fi
     fi
 }
