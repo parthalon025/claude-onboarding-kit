@@ -161,6 +161,7 @@ echo "--- Phase 2: File Structure ---"
 
 # --- Standard directories ---
 mkdir -p "$PROJECT_DIR/docs/plans"
+mkdir -p "$PROJECT_DIR/docs/lessons"
 
 case "$TEMPLATE_TYPE" in
     node)
@@ -352,6 +353,30 @@ if [[ ! -f "$PROJECT_DIR/CLAUDE.md" ]]; then
         echo "[+] Created CLAUDE.md from $TEMPLATE_TYPE template"
         echo "    Edit CLAUDE.md to fill in {{placeholders}}"
         echo "    AI workflow guide: ~/.claude/docs/ai-coding-workflows.md"
+
+        # Enhancement: replace static Lessons-Derived Rules with live top-5 from lessons-db
+        if command -v lessons-db &>/dev/null; then
+            echo "  [lessons-db] Querying top lessons for this project type..."
+            _ldb_rules=""
+            _rank=1
+            while IFS= read -r line && [[ $_rank -le 5 ]]; do
+                if [[ "$line" =~ \[\#([0-9]+)\][[:space:]](.*) ]]; then
+                    _one="${BASH_REMATCH[2]}"
+                    _ldb_rules+="${_rank}. **[#${BASH_REMATCH[1]}]** ${_one}"$'\n'
+                    ((_rank++)) || true
+                fi
+            done < <(lessons-db search "common failures" --polarity negative --top 5 2>/dev/null || true)
+
+            if [[ "$_rank" -gt 1 ]]; then
+                awk -v rules="$_ldb_rules" '
+                    /^## Lessons-Derived Rules/ { print; in_section=1; print ""; print rules; next }
+                    in_section && /^## / { in_section=0 }
+                    !in_section { print }
+                ' "$PROJECT_DIR/CLAUDE.md" > "$PROJECT_DIR/CLAUDE.md.tmp" \
+                    && mv "$PROJECT_DIR/CLAUDE.md.tmp" "$PROJECT_DIR/CLAUDE.md"
+                echo "  [lessons-db] Injected live lessons"
+            fi
+        fi
     else
         echo "[!] Template not found: $TEMPLATE"
     fi
@@ -382,6 +407,11 @@ for rule in "$KIT_DIR/hookify-rules/"*.local.md; do
     fi
 done
 echo "[+] Copied $RULES_COPIED hookify rules to .claude/"
+
+# Enhancement: infer scope tags for this project
+if command -v scope-infer &>/dev/null; then
+    scope-infer "$PROJECT_DIR" 2>/dev/null || true
+fi
 
 # Add Claude local files to .gitignore
 if [[ -d "$PROJECT_DIR/.git" ]]; then

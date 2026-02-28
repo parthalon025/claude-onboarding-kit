@@ -62,6 +62,11 @@ check "gitleaks.toml exists" "$([ -f gitleaks.toml ] && echo ok || echo fail)"
 # AGENTS.md template
 check "templates/AGENTS.md exists" "$([ -f templates/AGENTS.md ] && echo ok || echo fail)"
 
+# lessons-db integration checks
+check "claude-init: creates docs/lessons/" "$(grep -q 'docs/lessons' bin/claude-init && echo ok || echo fail)"
+check "claude-init: lessons-db integration block" "$(grep -q 'lessons-db' bin/claude-init && echo ok || echo fail)"
+check "claude-init: scope-infer integration block" "$(grep -q 'scope-infer' bin/claude-init && echo ok || echo fail)"
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
