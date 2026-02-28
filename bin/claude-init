@@ -161,7 +161,6 @@ echo "--- Phase 2: File Structure ---"
 
 # --- Standard directories ---
 mkdir -p "$PROJECT_DIR/docs/plans"
-mkdir -p "$PROJECT_DIR/docs/lessons"
 
 case "$TEMPLATE_TYPE" in
     node)

@@ -329,13 +329,13 @@ Append these sections to the existing CLAUDE.md (do not overwrite — add after 
 
 - Check before planning: `/check-lessons` (surfaces relevant past mistakes)
 - Capture after bugs: `/capture-lesson` (enforces template + validation)
-- Lessons location: `docs/lessons/`
+- Lessons: `lessons-db search` to query, `lessons-db capture` to add. DB is authoritative — never write lesson .md files directly.
 ```
 
 ### Create directory structure:
 
 ```bash
-mkdir -p docs/lessons docs/plans tasks
+mkdir -p docs/plans tasks
 touch tasks/progress.txt  # append-only state file
 ```
 
