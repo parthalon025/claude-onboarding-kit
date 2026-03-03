@@ -64,6 +64,9 @@ make test                # validate + lint
 
 `KIT_DIR` for scripts is derived from the install location — edit source files here, not in `~/.claude/kit/`.
 
+## Scope Tags
+language:shell, domain:tooling
+
 ## Conventions
 
 - `~/.local/bin/claude-init` is a symlink to `bin/claude-init` — always edit `bin/claude-init`

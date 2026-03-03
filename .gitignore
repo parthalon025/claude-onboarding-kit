@@ -25,3 +25,4 @@ megalinter-reports/
 
 # Generated embeddings (local, never commit)
 .embeddings/
+client_secret*.json
