@@ -64,6 +64,46 @@ make test                # validate + lint
 
 `KIT_DIR` for scripts is derived from the install location — edit source files here, not in `~/.claude/kit/`.
 
+## Setup Walkthrough
+
+Two paths to set up a new project:
+
+**Fast path — `claude-init`** (no prompts, ~10s):
+```bash
+claude-init node    # Node.js project: git init, GitHub repo, CLAUDE.md, hookify rules
+claude-init python  # Python project
+claude-init general # Language-agnostic
+```
+
+**Full path — `/setup-repo`** (interactive, 14 phases):
+1. Gather project info (name, language, purpose)
+2. Scaffold CLAUDE.md from template + git init
+3. GitHub repo creation + branch protection
+4. Gitleaks secret scanning setup
+5. Code quality plugins via `lint-install` (see TIER levels below)
+6. Session hook installation
+7. CI workflow templates (security.yml, release.yml)
+8. Quality gates (lessons-db scan integration)
+9. Ollama local code review setup
+10. Semantic embeddings setup
+11. Mode-based directory structure
+12. Draft artifacts (tech-spec, risk-log, qa-plan)
+13. Supporting files (CONTRIBUTING, PR template)
+14. Security gate + final verification
+
+**TIER levels for `lint-install`:**
+- `core` — Essential safety tools: shellcheck, yamllint, markdownlint, cspell, gitleaks (installed by default)
+- `recommended` — Adds: prettier, eslint/mypy (language-detected), pre-commit hooks (default with core)
+- `advanced` — Adds: megalinter, sonar, codeql, coverage gates (opt-in, heavier CI cost)
+
+```bash
+lint-install                        # core + recommended (default)
+lint-install --only core            # minimal set only
+lint-install --only all             # everything including advanced
+lint-install --dry-run              # preview without installing
+lint-install --list                 # show all available plugins with tier labels
+```
+
 ## Conventions
 
 - `~/.local/bin/claude-init` is a symlink to `bin/claude-init` — always edit `bin/claude-init`
