@@ -428,6 +428,20 @@ fi
 echo ""
 
 # ===========================================
+# Phase 2.6: CI/CD Workflows
+# ===========================================
+echo "--- Phase 2.6: CI/CD Workflows ---"
+
+if command -v ci-sweep.sh &>/dev/null; then
+  echo "[+] Stamping CI workflows (Tier 2 default)..."
+  ci-sweep.sh --repo "$(basename "$PWD")" --tier 2 2>/dev/null || echo "[!] ci-sweep.sh failed — CI not configured"
+else
+  echo "[!] ci-sweep.sh not found — skipping CI setup"
+fi
+
+echo ""
+
+# ===========================================
 # Phase 3: Autonomous Coding Toolkit
 # ===========================================
 echo "--- Phase 3: Autonomous Coding Toolkit ---"
