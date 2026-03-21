@@ -1,21 +1,32 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate:
+  lint:
+    uses: parthalon025/ci-workflows/.github/workflows/reusable-lint-python.yml@v1
+    secrets: inherit
+  test:
+    needs: lint
+    uses: parthalon025/ci-workflows/.github/workflows/reusable-test-python.yml@v1
+    secrets: inherit
+  security:
+    uses: parthalon025/ci-workflows/.github/workflows/reusable-security.yml@v1
+    secrets: inherit
+  ci-pass:
+    needs: [lint, test, security]
     runs-on: ubuntu-latest
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate kit structure
-        run: bash tests/validate.sh
-
-      - name: Shellcheck
+      - name: Check results
         run: |
-          find . -name "*.sh" -not -path "./_archived/*" \
-            | sort | xargs shellcheck
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]] || \
+             [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            exit 1
+          fi
