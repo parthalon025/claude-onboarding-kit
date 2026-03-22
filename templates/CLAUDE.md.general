@@ -54,32 +54,6 @@ Brainstorm → PRD → Risk Log → Tech Spec → Worktree → Execute (TDD) →
 | QA Plan | `docs/product/qa-plan.md` | `/create-qa-plan` |
 | Pipeline Status | `tasks/pipeline-status.md` | auto-generated at setup |
 
-## Lessons-Derived Rules
-
-1. **No bare exception swallowing** — log before returning fallback. Every `except` block logs.
-2. **Async discipline** — no `async def` without I/O; verify `await` at every call site.
-3. **Subscriber lifecycle** — store callback ref on `self`, unsubscribe in `shutdown()`.
-4. **Schema changes update all consumers** — producer + consumer change in same PR.
-5. **`create_task` done_callback** — every unwaited task needs error visibility.
-
-## Code Factory Workflow
-
-brainstorm → research → PRD → plan → worktree → execute → verify → finish
-
-- Every feature starts with `/brainstorm` — no exceptions
-- PRD before implementation: `/create-prd`
-- Progress tracked in `tasks/progress.txt` (append-only)
-- Never claim done without running `/verify`
-
-## Lean Gate
-
-Before building anything, confirm:
-- **Hypothesis:** what specific user behavior are we predicting?
-- **MVP:** what is the minimum version that tests this hypothesis? (≤ 2 weeks solo)
-- **First users:** name 3 real humans who will use this in 30 days
-- **Success metric:** how will we know it worked?
-- **Pivot trigger:** at what point do we stop and change direction?
-
 ## Scope Tags
 universal
 
